@@ -1,6 +1,7 @@
 const singleTradeController = require("./singleTradeController");     
 const closeTradeController = require("./closeTradeController");  
 const lockedAccountsController = require("./lockedAccountsController");  
+const scheduleController = require("./scheduleController");  
 const errorsModel = require("../models/Errors");
 const schEventsModel = require("../models/SchEvents");
 const spreadsModel = require("../models/Spreads");
