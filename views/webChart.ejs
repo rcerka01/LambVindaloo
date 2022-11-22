@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Vindaloo</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="/assets/css/grid.css" rel="stylesheet">
+    <!-- JQuery JSON styles -->
+    <link href="/assets/json/jquery.json-viewer.css" rel="stylesheet">
+    <!-- JQuery js -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- JQuery JSON js -->
+    <script src="/assets/json/jquery.json-viewer.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- JS Util -->
+    <script src="/assets/js/util.js"></script>
+    <!-- JS Main -->
+    <script src="/assets/js/main.js"></script>
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <h3>Lamb Vindaloo</h3>
+
+      <canvas id="myChart" style="width:100%;max-width:1200px"></canvas>
+      
+      <div id="output">
+        <%- output %>
+      </div>
+
+    </div> <!-- /container -->
+
+  <script>
+    $(document).ready( function() {
+      var xyValues = JSON.parse('<%-JSON.stringify(xyValues)%>');
+      new Chart("myChart", {
+        type: "line",
+        data:  {
+          datasets: [{
+            pointRadius: 1,
+            label: 'XTB spreads by minute',
+            pointBackgroundColor: "rgba(0,0,255,1)",
+            data: xyValues}],
+          options: {
+            elements: {
+              line: {
+                borderWidth: 1
+              }
+            },
+            scales: {
+              x: {
+                type: 'time',
+              }
+            }
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

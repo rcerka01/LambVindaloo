@@ -1,10 +1,13 @@
 const singleTradeController = require("./singleTradeController");     
 const closeTradeController = require("./closeTradeController");  
-const spreadController = require("./spreadController");  
-const scheduleController = require("./scheduleController");     
 const lockedAccountsController = require("./lockedAccountsController");  
 const errorsModel = require("../models/Errors");
 const schEventsModel = require("../models/SchEvents");
+const spreadsModel = require("../models/Spreads");
+const percentile = require("percentile");
+
+
+const conf = require("../config/config");
 
 module.exports = { run: async function (app, dbClient) {
 
@@ -13,7 +16,7 @@ module.exports = { run: async function (app, dbClient) {
     await lockedAccountsController.setLockedAccounts(dbClient);
 
     // start scheduler
-    scheduleController.run(dbClient);
+    // scheduleController.run(dbClient);
 
     function isLockedAccount(account) {
         return lockedAccountsController.isLockedAccount(account);
@@ -31,6 +34,11 @@ module.exports = { run: async function (app, dbClient) {
     function strong(value) {
         return "<strong>" + value + "</strong>";
     }
+
+    function getOnePipValueGbp(currency) {
+        return currency.lot * currency.value * currency.pip * currency.pipToGBP
+    }
+    
 
 
 
@@ -62,7 +70,54 @@ module.exports = { run: async function (app, dbClient) {
     });
 
 
+
+    // SPREAD
+    app.get("/spreads", function(req, res) {
+        var symbols = conf.schedules.find(s => s.id == 1).symbols
+        var output = ""
+        symbols.forEach( symbol => {
+            output = output + "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "'>" + symbol + "</a><br>"
+        })
+        res.render("web", { output });
+    });
+
+    app.get("/spread/:symbol/", async function(req, res) {
+        var symbol = req.params.symbol;
+        const spreads = await spreadsModel.findSpreads(dbClient, symbol);
+        const cur = conf.currencies.find( currency => currency.name == symbol )
+
+        var spreadsArr = []
+        var xyValues = []
+
+        var body = []
+        await spreads.forEach( s => {
+            var spread = s.spread / cur.pip * getOnePipValueGbp(cur)
+            var timeArr = s.time.split(":")
+            var time = timeArr[0] + ":" + timeArr[1]
+
+            spreadsArr.push(spread)
+            xyValues.push( { x: time, y: spread.toFixed(2) } )
+            body.push(time + " " + s.symbol + " " + spread.toFixed(2) + "£<br>")
+        });
+
+        var head = "<h4>" + symbol + "</h4>"
+        head = head + "<table>"
+        head = head + "<tr><th>One PIP in GBP</th><td>" + cur.pipToGBP.toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Leverage </th><td>" + cur.leverage + "</td></tr>"
+        head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
+        head = head + "</table>"
+
+        body.reverse()
+        const output = head + body.join("")
+        
+        res.render("webChart", { output, xyValues });
+    });
+
+
     
+
 
     // LOCK
     app.post("/lock/:account/", function(req, res) {

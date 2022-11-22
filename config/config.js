@@ -1,6 +1,7 @@
 const secret = require("./secret");
 const login = require("./login");
 const schedules = require("./schedules");
+const currencies = require("./currencies");
 
 module.exports = {
     app: {
@@ -33,4 +34,5 @@ module.exports = {
     defaultAccount: 1, // when account not passed with url
     login: login.accounts,
     schedules: schedules.tasks,
+    currencies: currencies.mapper
 }

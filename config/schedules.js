@@ -11,7 +11,6 @@ module.exports = {
     // dayW - 0 Sun
     //       (sec min hour dayM month dayW)
     // cron: "0    10   00    *     *    3",
-
     tasks: [
         {
             id: 1,

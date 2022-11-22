@@ -18,7 +18,7 @@ async function insertSpreadDb(client, symbol, spread) {
 async function findSpreadsDb(client, query, projection) {
     const results = client.db(conf.db.name).collection("spreads")
         .find(query, projection)
-        .sort( { _id: -1 } );    
+        .sort( { _id: 1 } );    
     return results;     
 };
 
@@ -36,8 +36,8 @@ async function insertSpread(client, symbol, spread) {
     }
 }
 
-async function findSpreads(client) {
-    const query = {};
+async function findSpreads(client, symbol) {
+    const query = { symbol: symbol };
     const projection = {};
 
     try {
