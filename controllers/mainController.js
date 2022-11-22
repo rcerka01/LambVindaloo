@@ -16,7 +16,7 @@ module.exports = { run: async function (app, dbClient) {
     await lockedAccountsController.setLockedAccounts(dbClient);
 
     // start scheduler
-    // scheduleController.run(dbClient);
+    scheduleController.run(dbClient);
 
     function isLockedAccount(account) {
         return lockedAccountsController.isLockedAccount(account);
