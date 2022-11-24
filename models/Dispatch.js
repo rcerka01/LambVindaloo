@@ -43,11 +43,11 @@ async function findDispatchesDb(client, query, projection) {
     return results;     
 };
 
-// async function deleteDispatchesDb(client, query) {
-//     const results = client.db(conf.db.name).collection("dispatches")
-//         .deleteMany(query)
-//     return results;     
-// };
+async function deleteDispatchesDb(client, query) {
+    const results = client.db(conf.db.name).collection("dispatches")
+        .deleteMany(query)
+    return results;     
+};
 
 // Interface
 async function openDispatch(client, account, action, symbol, status, sl, offset, tp, volume, maxSpread) {
@@ -95,29 +95,44 @@ async function verify(client, id) {
     }
 }
 
-// async function findDispatches(client, status) {
-//     const query = { status: status };
-//     const projection = {};
+async function getAll(client) {
+    const query = {};
+    const projection = {};
 
-//     try {
-//         const result = await findDispatchesDb(client, query, projection);
-//         return result;
-//     } catch (e) {
-//         console.error(e);
-//     }
-// }
+    try {
+        const result = await findDispatchesDb(client, query, projection);
+        return result;
+    } catch (e) {
+        console.error(e);
+    }
+}
 
-// async function deleteAllDispatches(client) {
-//     try {
-//         await  deleteDispatchesDb(client, {});
-//     } catch (e) {
-//         console.error(e);
-//     }
-// }
+async function getDispatchesByAccount(client, account) {
+    const query = { account: account };
+    const projection = {};
+
+    try {
+        const result = await findDispatchesDb(client, query, projection);
+        return result;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function deleteByAccount(client, account) {
+    try {
+        await  deleteDispatchesDb(client, { account: account });
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 module.exports = {
     openDispatch,
     dischargePreceding,
     getPendings,
-    verify
+    getAll,
+    getDispatchesByAccount,
+    verify,
+    deleteByAccount
 }

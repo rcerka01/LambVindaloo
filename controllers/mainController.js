@@ -6,8 +6,8 @@ const errorsModel = require("../models/Errors");
 const schEventsModel = require("../models/SchEvents");
 const spreadsModel = require("../models/Spreads");
 const dispatchModel = require("../models/Dispatch");
+const lockedAccountsModel = require("../models/LockedAccounts");
 const percentile = require("percentile");
-
 
 const conf = require("../config/config");
 
@@ -147,6 +147,102 @@ module.exports = { run: async function (app, dbClient) {
 
   
     // LOGS
+    app.get("/", function(req, res) {
+        var output = ""
+        output += "<a target='_blank' href='http://" + req.headers.host + "/all-trades'>ALL TRADES</a><br>"
+        output += "<a target='_blank' href='http://" + req.headers.host + "/trades'>TRADES BY ACCOUNT</a><br>"
+        output += "<a target='_blank' href='http://" + req.headers.host + "/spreads'>SPREADS</a><br>"
+        output += "<a target='_blank' href='http://" + req.headers.host + "/locked-accounts'>LOCKED ACCOUNTS</a><br>"
+        output += "<a target='_blank' href='http://" + req.headers.host + "/schedules'>SCHEDULES</a><br>"
+        output += "<a target='_blank' href='http://" + req.headers.host + "/exceptions'>ERRORS</a><br>"
+        output += "<br>"
+        output += "<p>/:account/:sl/:offset/:tp/:action/:symbol/:volume<br>"
+        output += "/close/:account/:symbol<br>"
+        output += "/lock/:account/<br>"
+        output += "/unlock/:account/<br>"
+        output += "<p>curl -X POST http://" + req.headers.host + "/6/0/0/0/sell/GBPUSD/0.1<br>"
+        output += "curl -X POST http://" + req.headers.host + "/close/6/GBPUSD<br>"
+        output += "curl -X POST http://" + req.headers.host + "/lock/6<br>"
+        output += "curl -X POST http://" + req.headers.host + "/unlock/6<br>"
+        res.render("web", { output });
+    });
+
+    async function renderTrades(data) {
+        var output = "<table>"
+        output += "<tr> <th></th> <th></th> <th>Acc</th> <th>Action</th> <th>Symbol</th> <th>SL</th>" +
+        "<th>Offset</th> <th>TP</th> <th>Volume</th>  <th>Max Spread</th> </tr>"
+
+        var color = ""
+        await data.forEach( d => {
+            switch (d.status) {
+                case "pending": 
+                    color = "coral"
+                break
+                case "confirmed": 
+                    color = "green"
+                break
+                case "discharged": 
+                    color = "grey"
+                break
+            }
+
+            output += "<tr>" +
+            "<td>" + d.time + "</td>" +
+            "<td style='color:" + color + ";'>&nbsp" + d.status + "&nbsp</td>" +
+            "<td>&nbsp" + d.account + "</td>" +
+            "<td>&nbsp" + d.action + "</td>" +
+            "<td>&nbsp" + d.symbol + "</td>" +
+            "<td>&nbsp" + d.sl + "</td>" +
+            "<td>&nbsp" + d.offset + "</td>" +
+            "<td>&nbsp" + d.tp + "</td>" +
+            "<td>&nbsp" + d.volume + "</td>" +
+            "<td>&nbsp" + d.maxSpread + "</td>" +
+            "</tr>"
+        })
+        return output += "</table>"
+    }
+
+    app.get("/trades", function(req, res) {
+        var accounts = conf.login
+        var output = "<h4>Accounts</h4>"
+        accounts.forEach( account => {
+            output = output + "<a target='_blank' href='http://" + req.headers.host + "/trades/" + account.id + "'>" + account.id + "</a><br>"
+        })
+        res.render("web", { output });
+    });
+
+    app.get("/trades/:account", async function (req, res) {
+        var account = Number(req.params.account);
+        const data = await dispatchModel.getDispatchesByAccount(dbClient, account)
+        var output = await renderTrades(data)
+        output += "<a href='http://" + req.headers.host + "/delete-trades/" + account + "'>clear</a>";
+        res.render("web", { output });
+    });
+
+    app.get("/delete-trades/:account", async function(req, res) {  
+        var account = Number(req.params.account);
+        dispatchModel.deleteByAccount(dbClient, account);
+        res.redirect("/trades/" + account);
+    });
+
+    app.get("/all-trades", async function (req, res) {
+        var account = Number(req.params.account);
+        const data = await dispatchModel.getAll(dbClient, account)
+        var output = await renderTrades(data)
+        res.render("web", { output });
+    });
+
+    app.get("/locked-accounts", async function(req, res) {
+        var output = "<table>"
+        await lockedAccountsModel.getAllLockedAccounts(dbClient).then(accounts => 
+            accounts.forEach(account => {
+                output += "<tr><td>" + account._id + "</td><td>" + account.isLocked + "</td></tr>"
+            })
+        )
+        output += "</table>"
+        res.render("web", { output });
+    });
+
     app.get("/exceptions", async function(req, res) {  
         const results = await errorsModel.find(dbClient);
 
@@ -173,9 +269,7 @@ module.exports = { run: async function (app, dbClient) {
     });
 
     app.get("/delete-errors", async function(req, res) {  
-
         errorsModel.deleteAll(dbClient);
-
         res.redirect("/exceptions");
     });
 
@@ -201,9 +295,7 @@ module.exports = { run: async function (app, dbClient) {
     });
 
     app.get("/delete-schedules", async function(req, res) {  
-
         schEventsModel.deleteAll(dbClient);
-
         res.redirect("/schedules");
     });
 

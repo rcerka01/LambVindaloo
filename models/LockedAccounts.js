@@ -62,8 +62,8 @@ async function updateAccount(client, id, value) {
 }
 
 module.exports = {
-    getAllLockedAccounts: getAllLockedAccounts,
-    insertAccount: insertAccount,
-    deleteAccount: deleteAccount,
-    updateAccount: updateAccount
+    getAllLockedAccounts,
+    insertAccount,
+    deleteAccount,
+    updateAccount
 }
