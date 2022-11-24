@@ -19,7 +19,7 @@ async function deleteListing(client, id) {
 async function findListings(client, query, projection) {
     const results = client.db(conf.db.name).collection("lockedAccounts")
         .find(query, projection)
-        .sort( { _id: -1 } );           
+        .sort( { _id: 1 } );           
     return results;     
 };
 
