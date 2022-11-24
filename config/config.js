@@ -29,7 +29,8 @@ module.exports = {
         ws: false,
         spread: false,
         close: false,
-        trade: false
+        trade: false,
+        verify: false
     },
     defaultAccount: 1, // when account not passed with url
     login: login.accounts,

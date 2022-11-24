@@ -14,7 +14,18 @@ function connect(account) {
     return new WebSocket(url);
 }
 
+function tradeDirectionToDigit(direction) {
+    if (direction === "buy") {
+        return 0;
+    } else if (direction === "sell") {
+        return 1;    
+    } else {
+        return -1;
+    }
+}
+
 module.exports = {
     log,
-    connect
+    connect,
+    tradeDirectionToDigit
 }

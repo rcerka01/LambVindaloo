@@ -8,6 +8,9 @@ const symbols = [
 ]
 
 module.exports = {
+    // 999 fictional account to run scheduler once
+    // ONCE fictional symbol to run scheduler once
+    //
     // dayW - 0 Sun
     //       (sec min hour dayM month dayW)
     // cron: "0    10   00    *     *    3",
@@ -19,6 +22,14 @@ module.exports = {
             actions: ["saveSpread"],
             symbols: symbols, 
             accounts: [999]
-        }
+        },
+        {
+            id: 2,
+            name: "Retray pending dispatches",
+            cron: "*/15 * * * * *",
+            actions: ["retryPending"],
+            symbols: ["ONCE"], 
+            accounts: [999]
+        },
     ]
 }

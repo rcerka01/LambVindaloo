@@ -14,18 +14,8 @@ function closeTrades(dbClient, trades, symbol, wSocket) {
     }
 }
 
-function tradeDirectionToDigit(direction) {
-    if (direction === "buy") {
-        return 0;
-    } else if (direction === "sell") {
-        return 1;    
-    } else {
-        return -1;
-    }
-}
-
 module.exports = { close: function (dbClient, account, symbol, tradeDirection) {
-    const cmd = tradeDirectionToDigit(tradeDirection);
+    const cmd = com.tradeDirectionToDigit(tradeDirection);
 
     const wSocket = com.connect(account);
 

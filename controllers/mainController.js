@@ -5,6 +5,7 @@ const scheduleController = require("./scheduleController");
 const errorsModel = require("../models/Errors");
 const schEventsModel = require("../models/SchEvents");
 const spreadsModel = require("../models/Spreads");
+const dispatchModel = require("../models/Dispatch");
 const percentile = require("percentile");
 
 
@@ -44,7 +45,8 @@ module.exports = { run: async function (app, dbClient) {
 
 
     // ACTIONS
-    app.post("/:account/:sl/:offset/:tp/:action/:symbol/:volume", function(req, res) {
+    app.post("/:account/:sl/:offset/:tp/:action/:symbol/:volume", async function(req, res) {
+        // todo handle multiple accounts
 
         var account = Number(req.params.account);
         var sl = Number(req.params.sl);
@@ -53,19 +55,27 @@ module.exports = { run: async function (app, dbClient) {
         var action = req.params.action;
         var symbol = req.params.symbol;
         var volume = Number(req.params.volume);
+        // todo handle max spread
+        var maxSpread = 0
 
         if (!isLockedAccount(account)) {
+            await dispatchModel.dischargePreceding(dbClient, account, symbol)
+            await dispatchModel.openDispatch(dbClient, account, action, symbol, 'pending', sl, offset, tp, volume, maxSpread)
             singleTradeController.trade(dbClient, account, sl, tp, offset, action, symbol, volume);
         }
 
         res.status(200).send();
     });
 
-    app.post("/close/:account/:symbol", function(req, res) {
+    app.post("/close/:account/:symbol", async function(req, res) {
+        // todo handle multiple accounts
+
         var account = Number(req.params.account);
-        var name = req.params.symbol;
+        var symbol = req.params.symbol;
         if (!isLockedAccount(account)) {
-            closeTradeController.close(dbClient, account, name);
+            await dispatchModel.dischargePreceding(dbClient, account, symbol)
+            await dispatchModel.openDispatch(dbClient, account, 'close', symbol, 'pending')
+            closeTradeController.close(dbClient, account, symbol);
         }
         res.status(200).send();
     });
@@ -137,7 +147,7 @@ module.exports = { run: async function (app, dbClient) {
 
   
     // LOGS
-    app.get("/display-exceptions", async function(req, res) {  
+    app.get("/exceptions", async function(req, res) {  
         const results = await errorsModel.find(dbClient);
 
         const outputClearLink = "<a href='http://" + req.headers.host 
@@ -166,10 +176,10 @@ module.exports = { run: async function (app, dbClient) {
 
         errorsModel.deleteAll(dbClient);
 
-        res.redirect("/display-exceptions");
+        res.redirect("/exceptions");
     });
 
-    app.get("/display-schedules", async function(req, res) {  
+    app.get("/schedules", async function(req, res) {  
         const results = await schEventsModel.find(dbClient);
 
         const outputClearLink = "<a href='http://" + req.headers.host 
@@ -194,7 +204,7 @@ module.exports = { run: async function (app, dbClient) {
 
         schEventsModel.deleteAll(dbClient);
 
-        res.redirect("/display-schedules");
+        res.redirect("/schedules");
     });
 
 }}

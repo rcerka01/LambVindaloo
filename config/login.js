@@ -31,6 +31,12 @@ module.exports = {
             user: secret.user5,
             password: secret.password5
         },
+        {
+            id: 6,
+            type: 'demo',
+            user: secret.user6,
+            password: secret.password6
+        },
 
         // Kiril
         {

@@ -10,7 +10,7 @@ function actionStringToInt(action) {
     if (action == "buy") { return 0; } else { return 1; }
 }
 
-function closeTrades(dbClient, trades, symbol, wSocket, action) {
+function closeOpositeTrades(dbClient, trades, symbol, wSocket, action) {
     var cmd = actionStringToInt(action);
     for (i in trades) {
         // close only trades of oposite direction
@@ -53,18 +53,17 @@ module.exports = { trade: function (dbClient, account, sl, tp, offset, action, s
 
                     // change condition to for also 0 trades open
                 } else if (response.returnData.length > 0) {
+                    
+                    // close oposite trades to current action if exist
+                    closeOpositeTrades(dbClient, response.returnData, symbol, wSocket, action);
+
                     /* return getPreviousTrades */
                     var cmd = actionStringToInt(action);
 
                     // only if trade is NOT in same direction (buy / sell)
                     if (!isExistingTrade(response.returnData, symbol, cmd)) {
+
                         send.getPrice(dbClient, symbol, wSocket) // ignites new order
-                        
-                        // REMOFE IF!!!  
-                        // TEMP FIX TO CLOSE OPOSITE TRADES ONLY FOR ACCOUNT 1 or 2
-                        if (account == 1 || account == 2) {
-                            closeTrades(dbClient, response.returnData, symbol, wSocket, action);
-                        }
                     }
 
                 } else if (response.returnData.length == 0) {
