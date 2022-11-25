@@ -45,10 +45,8 @@ module.exports = { run: async function (app, dbClient) {
 
 
     // ACTIONS
-    app.post("/:account/:sl/:offset/:tp/:action/:symbol/:volume", async function(req, res) {
-        // todo handle multiple accounts
-
-        var account = Number(req.params.account);
+    app.post("/:accounts/:sl/:offset/:tp/:action/:symbol/:volume", async function(req, res) {
+        var accounts = req.params.accounts;
         var sl = Number(req.params.sl);
         var tp = Number(req.params.tp);
         var offset = Number(req.params.offset);
@@ -58,25 +56,32 @@ module.exports = { run: async function (app, dbClient) {
         // todo handle max spread
         var maxSpread = 0
 
-        if (!isLockedAccount(account)) {
-            await dispatchModel.dischargePreceding(dbClient, account, symbol)
-            await dispatchModel.openDispatch(dbClient, account, action, symbol, 'pending', sl, offset, tp, volume, maxSpread)
-            singleTradeController.trade(dbClient, account, sl, tp, offset, action, symbol, volume);
-        }
+        var accountsArr = accounts.split(',').map(Number)
+
+        accountsArr.forEach( async account =>  {
+            if (!isLockedAccount(account)) {
+                await dispatchModel.dischargePreceding(dbClient, account, symbol)
+                await dispatchModel.openDispatch(dbClient, account, action, symbol, 'pending', sl, offset, tp, volume, maxSpread)
+                singleTradeController.trade(dbClient, account, sl, tp, offset, action, symbol, volume);
+            }
+        })
 
         res.status(200).send();
     });
 
-    app.post("/close/:account/:symbol", async function(req, res) {
-        // todo handle multiple accounts
-
-        var account = Number(req.params.account);
+    app.post("/close/:accounts/:symbol", async function(req, res) {
+        var accounts = req.params.accounts;
         var symbol = req.params.symbol;
-        if (!isLockedAccount(account)) {
-            await dispatchModel.dischargePreceding(dbClient, account, symbol)
-            await dispatchModel.openDispatch(dbClient, account, 'close', symbol, 'pending')
-            closeTradeController.close(dbClient, account, symbol);
-        }
+
+        var accountsArr = accounts.split(',').map(Number)
+
+        accountsArr.forEach( async account =>  {
+            if (!isLockedAccount(account)) {
+                await dispatchModel.dischargePreceding(dbClient, account, symbol)
+                await dispatchModel.openDispatch(dbClient, account, 'close', symbol, 'pending')
+                closeTradeController.close(dbClient, account, symbol);
+            }
+        })
         res.status(200).send();
     });
 
