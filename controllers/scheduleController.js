@@ -52,5 +52,5 @@ function run(dbClient) {
 }
 
 module.exports = { 
-    run: run
+    run
 }
