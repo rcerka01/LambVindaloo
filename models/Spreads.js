@@ -36,9 +36,16 @@ async function insertSpread(client, symbol, spread) {
     }
 }
 
-async function findSpreads(client, symbol) {
-    const query = { symbol: symbol };
-    const projection = {};
+async function findSpreads(client, symbol, days) {
+    var ObjectId = require('mongodb').ObjectID;
+    const query = { 
+        symbol:symbol,
+        _id: {
+            $gt: ObjectId(Math.floor((new Date(new Date() - days * 60 * 60 * 24 * 1000))/1000).toString(16) + "0000000000000000"), 
+          }
+    };
+
+    const projection = {}
 
     try {
         const result = await findSpreadsDb(client, query, projection);
@@ -48,9 +55,17 @@ async function findSpreads(client, symbol) {
     }
 }
 
-async function deleteAllSpreads(client) {
+async function deleteOldSpreads(client) {
+    var ObjectId = require('mongodb').ObjectID;
+
+    const query = { 
+        _id: {
+            $lt: ObjectId(Math.floor((new Date(new Date() - 28 * 60 * 60 * 24 * 1000))/1000).toString(16) + "0000000000000000"), 
+          }
+    };
+
     try {
-        await  deleteSpreadsDb(client, {});
+        await  deleteSpreadsDb(client, query);
     } catch (e) {
         console.error(e);
     }
@@ -59,5 +74,5 @@ async function deleteAllSpreads(client) {
 module.exports = {
     insertSpread,
     findSpreads,
-    deleteAllSpreads
+    deleteOldSpreads
 }

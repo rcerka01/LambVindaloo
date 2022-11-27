@@ -43,7 +43,7 @@ module.exports = { run: async function (app, dbClient) {
     
 
 
-
+    // todo tp minus spread
     // ACTIONS
     app.post("/:accounts/:sl/:offset/:tp/:action/:symbol/:volume", async function(req, res) {
         var accounts = req.params.accounts;
@@ -92,18 +92,25 @@ module.exports = { run: async function (app, dbClient) {
         var symbols = conf.schedules.find(s => s.id == 1).symbols
         var output = ""
         symbols.forEach( symbol => {
-            output = output + "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "'>" + symbol + "</a><br>"
+            output = output + "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "/1'>" + symbol + "</a><br>"
         })
         res.render("web", { output });
     });
 
-    app.get("/spread/:symbol/", async function(req, res) {
+    app.get("/spread/:symbol/:days", async function(req, res) {
         var symbol = req.params.symbol;
-        const spreads = await spreadsModel.findSpreads(dbClient, symbol);
+        var days = Number(req.params.days);
+        const spreads = await spreadsModel.findSpreads(dbClient, symbol, days);
         const cur = conf.currencies.find( currency => currency.name == symbol )
 
         var spreadsArr = []
         var xyValues = []
+
+        var links =
+        "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "/1'>1 day&nbsp</a>" +
+        "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "/3'>3 days&nbsp</a>" +
+        "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "/7'>7 days&nbsp</a>" +
+        "<a target='_blank' href='http://" + req.headers.host + "/spread/" + symbol + "/28'>28 days</a>" 
 
         var body = []
         await spreads.forEach( s => {
@@ -120,15 +127,15 @@ module.exports = { run: async function (app, dbClient) {
         head = head + "<table>"
         head = head + "<tr><th>One PIP in GBP</th><td>" + cur.pipToGBP.toFixed(2) + "£</td></tr>"
         head = head + "<tr><th>Leverage </th><td>" + cur.leverage + "</td></tr>"
-        head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
-        head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
-        head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
+        // head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
+        // head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
+        // head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
         head = head + "</table>"
 
         body.reverse()
         const output = head + body.join("")
         
-        res.render("webChart", { output, xyValues });
+        res.render("webChart", { output, xyValues, links });
     });
 
 

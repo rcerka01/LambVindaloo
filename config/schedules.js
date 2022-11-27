@@ -40,9 +40,18 @@ module.exports = {
             symbols: symbols, 
             accounts: [999]
         },
-        // Confirm Trades
+        // Delete Spreads
         {
             id: 4,
+            name: "Delete spreads older than 28 days daily (five past one in night)",
+            cron: "* 5 1 * * *",
+            actions: ["deleteOldSpreads"],
+            symbols: symbols, 
+            accounts: [999]
+        },
+        // Confirm Trades
+        {
+            id: 5,
             name: "Retray pending dispatches from Monday till Thursday",
             cron: "*/15 * * * * 1-4",
             actions: ["retryPending"],
@@ -50,7 +59,7 @@ module.exports = {
             accounts: [999]
         },
         {
-            id: 5,
+            id: 6,
             name: "Retray pending dispatches on Friday",
             cron: "*/15 * 0-21 * * 5",
             actions: ["retryPending"],
@@ -58,7 +67,7 @@ module.exports = {
             accounts: [999]
         },
         {
-            id: 6,
+            id: 7,
             name: "Retray pending dispatches on Sunday",
             cron: "*/15 * 22-23 * * 7",
             actions: ["retryPending"],

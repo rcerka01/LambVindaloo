@@ -6,6 +6,7 @@ const verifyTradesController = require("./verifyTradesController");
 const com = require("./commons");  
 const schEventsModel = require("../models/SchEvents");
 const dispatchModel = require("../models/Dispatch");
+const spreadsModel = require("../models/Spreads");
 
 async function retryPendings(dbClient) {
     const pendings = await dispatchModel.getPendings(dbClient)
@@ -17,6 +18,9 @@ async function retryPendings(dbClient) {
 
 async function stringToComand(dbClient, str, account, symbol) {
     switch (str) {
+        case "deleteOldSpreads":
+            await spreadsModel.deleteOldSpreads(dbClient)
+        break
         case "saveSpread":
             await spreadController.saveSpread(dbClient, symbol)
         break
