@@ -34,10 +34,10 @@ module.exports = { verify: function (dbClient, account, symbol, cmd, id, sl, off
                         closeTradeController.close(dbClient, account, symbol);
                             com.log("Trade closed during verification", localLog)
                     } else if (cmd == 0) {
-                        singleTradeController.trade(dbClient, account, sl, tp, offset, "buy", symbol, volume);
+                        singleTradeController.trade(dbClient, account, sl, tp, offset, "buy", symbol, volume, maxSpread);
                             com.log("Switch to Buy during verification", localLog)
                     } else if (cmd == 1) {
-                        singleTradeController.trade(dbClient, account, sl, tp, offset, "sell", symbol, volume);
+                        singleTradeController.trade(dbClient, account, sl, tp, offset, "sell", symbol, volume, maxSpread);
                             com.log("Switch to Sell during verification", localLog)
                     }
                     //
