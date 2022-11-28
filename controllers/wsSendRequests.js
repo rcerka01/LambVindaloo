@@ -43,16 +43,17 @@ function getPrice(dbClient, symbol, ws) {
 function sendStartTrade(dbClient, action, symbol, price, volume, wSocket, sl, tp, offset) {
     const nrFormated = (nr) => { return Number(nr.toFixed(5)); }
     offset = offset * 10;
+    const pipFactor = com.getConfigBySymbol(symbol).pip
     if (action == "sell") { 
         var cmd = 1; 
-        if (sl != 0) { sl = (price + sl / 10000); }
-        if (tp != 0) { tp = (price - tp / 10000); }
+        if (sl != 0) { sl = (price + sl * pipFactor); }
+        if (tp != 0) { tp = (price - tp * pipFactor); }
         sl = nrFormated(sl);
         tp = nrFormated(tp);
     } else { 
         var cmd = 0;
-        if (sl != 0) { sl = (price - sl / 10000); }
-        if (tp != 0) { tp = (price + tp / 10000); }
+        if (sl != 0) { sl = (price - sl * pipFactor); }
+        if (tp != 0) { tp = (price + tp * pipFactor); }
         sl = nrFormated(sl);
         tp = nrFormated(tp);
     }

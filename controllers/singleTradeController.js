@@ -3,6 +3,7 @@ const send = require("./wsSendRequests");
 const errorsModel = require("../models/Errors");
 const com = require("./commons");  
 const WebSocket = require('ws');
+const dispatchModel = require("../models/Dispatch");
 
 const localLog = conf.logs.trade
 
@@ -24,7 +25,9 @@ function isExistingTrade(trades, symbol, cmd) {
     return trades.some(item =>  item.cmd === cmd && item.symbol === symbol )
 }
 
-module.exports = { trade: function (dbClient, account, sl, tp, offset, action, symbol, volume) {
+module.exports = { trade: function (dbClient, account, sl, tp, offset, action, symbol, volume, maxSpreadGbp, isDispatchCancel, id) {
+    com.log("DB id: " + id, localLog);
+
     const wSocket = com.connect(account);
 
     wSocket.onopen = function() {
@@ -33,7 +36,7 @@ module.exports = { trade: function (dbClient, account, sl, tp, offset, action, s
         ws = send.login(dbClient, wSocket, account);
     };
 
-    wSocket.onmessage = function(evt) {
+    wSocket.onmessage = async function(evt) {
         try {
             var response = JSON.parse(evt.data);
             if(response.status == true) {
@@ -42,10 +45,46 @@ module.exports = { trade: function (dbClient, account, sl, tp, offset, action, s
                     send.getPreviousTrades(dbClient, wSocket);
 
                 } else if (response.returnData.ask != undefined) {
-                    /* return getPrice */
+
+                    /* return from getPrice */
                     if (action == "sell") { var price = response.returnData.bid; } else { var price = response.returnData.ask; }
-                    send.startTrade(dbClient, action, symbol, price, volume, wSocket, sl, tp, offset)
-            
+
+                    var curConf = com.getConfigBySymbol(symbol)
+
+                    // xtb given spread
+                    const spreadInPips = response.returnData.spreadRaw / curConf.pip
+                    const spreadInGbp = com.pipToGbp(symbol, spreadInPips) * curConf.pip
+                    dispatchModel.addSpread(dbClient, id, spreadInGbp, maxSpreadGbp, isDispatchCancel)
+                        com.log("Spread in pips: " + spreadInPips + " spread in GBP: " + spreadInGbp, localLog);
+
+                    // improve tp by taking off spread
+                    if (tp > 0) { var improvedTp = tp - spreadInPips }
+                    else { var improvedTp = 0 }
+                        com.log("tp: " + tp + " vs improved tp: " + improvedTp, localLog);                    
+
+                    // is max spread passed trough url
+                    if (!isNaN(maxSpreadGbp)) {
+                        if (spreadInGbp < maxSpreadGbp) {
+                            // spread is smaller, start trade
+                                com.log("Spread check pass, starting trade", localLog);
+                            send.startTrade(dbClient, action, symbol, price, volume, wSocket, sl, improvedTp, offset)
+                        } else {
+                            // cancel or retry trade
+                            if (isDispatchCancel) {
+                                // confirm close
+                                await dispatchModel.dischargePreceding(dbClient, account, symbol)
+                                await dispatchModel.openDispatch(dbClient, account, 'close', symbol, 'pending')
+                                    com.log("Trade canceled due high spread", localLog);
+                            } else {
+                                    com.log("Spread too high. Trade will retray", localLog);
+                            }
+                        }
+                    } else {
+                        // start trade normally
+                            com.log("Starting trade", localLog);
+                        send.startTrade(dbClient, action, symbol, price, volume, wSocket, sl, improvedTp, offset)
+                    }
+
                 } else if (response.returnData.order != undefined) {
                     /* return startTrade. Jusr order ID */
                     var order = response.returnData.order;

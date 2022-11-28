@@ -52,10 +52,11 @@ async function deleteDispatchesDb(client, query) {
 // Interface
 async function openDispatch(client, account, action, symbol, status, sl, offset, tp, volume, maxSpread) {
     try {
-        await insertDispatchDb(client, account, action, symbol, status, sl, offset, tp, volume, maxSpread);
+        var result = await insertDispatchDb(client, account, action, symbol, status, sl, offset, tp, volume, maxSpread);
     } catch (e) {
         console.error(e);
     }
+    return result 
 }
 
 async function dischargePreceding(dbClient, account, symbol) {
@@ -127,6 +128,17 @@ async function deleteByAccount(client, account) {
     }
 }
 
+async function addSpread(client, id, spread, maxSpread, cancel) {
+    if (cancel) var update = {$set: { spread: spread, maxSpread: maxSpread, status: "stopped" }}
+    else var update = {$set: { spread: spread, maxSpread: maxSpread }}
+    try {
+        const result = await updateOneDB(client, id, update);
+        return result;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 module.exports = {
     openDispatch,
     dischargePreceding,
@@ -134,5 +146,6 @@ module.exports = {
     getAll,
     getDispatchesByAccount,
     verify,
-    deleteByAccount
+    deleteByAccount,
+    addSpread
 }

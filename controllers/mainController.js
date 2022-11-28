@@ -2,6 +2,7 @@ const singleTradeController = require("./singleTradeController");
 const closeTradeController = require("./closeTradeController");  
 const lockedAccountsController = require("./lockedAccountsController");  
 const scheduleController = require("./scheduleController");  
+const com = require("./commons");  
 const errorsModel = require("../models/Errors");
 const schEventsModel = require("../models/SchEvents");
 const spreadsModel = require("../models/Spreads");
@@ -37,15 +38,11 @@ module.exports = { run: async function (app, dbClient) {
         return "<strong>" + value + "</strong>";
     }
 
-    function getOnePipValueGbp(currency) {
-        return currency.lot * currency.value * currency.pip * currency.pipToGBP
-    }
-    
 
 
-    // todo tp minus spread
     // ACTIONS
-    app.post("/:accounts/:sl/:offset/:tp/:action/:symbol/:volume", async function(req, res) {
+    // dispatch cancel - true return true, nothing return false. Dont use false, it returns true(!) 
+    app.post("/:accounts/:sl/:offset/:tp/:action/:symbol/:volume/:maxspread?/:dispcancel?/", async function(req, res) {
         var accounts = req.params.accounts;
         var sl = Number(req.params.sl);
         var tp = Number(req.params.tp);
@@ -53,18 +50,20 @@ module.exports = { run: async function (app, dbClient) {
         var action = req.params.action;
         var symbol = req.params.symbol;
         var volume = Number(req.params.volume);
-        // todo handle max spread
-        var maxSpread = 0
+        var maxSpread = Number(req.params.maxspread);
+        var isDispatchCancel = Boolean(req.params.dispcancel);
 
         var accountsArr = accounts.split(',').map(Number)
 
         accountsArr.forEach( async account =>  {
             if (!isLockedAccount(account)) {
                 await dispatchModel.dischargePreceding(dbClient, account, symbol)
-                await dispatchModel.openDispatch(dbClient, account, action, symbol, 'pending', sl, offset, tp, volume, maxSpread)
-                singleTradeController.trade(dbClient, account, sl, tp, offset, action, symbol, volume);
+                await dispatchModel.openDispatch(dbClient, account, action, symbol, 'pending', sl, offset, tp, volume, maxSpread, isDispatchCancel)
+                .then(result =>
+                    singleTradeController.trade(dbClient, account, sl, tp, offset, action, symbol, volume, maxSpread, isDispatchCancel, result.insertedId)
+                )
             }
-        })
+        }),
 
         res.status(200).send();
     });
@@ -114,7 +113,7 @@ module.exports = { run: async function (app, dbClient) {
 
         var body = []
         await spreads.forEach( s => {
-            var spread = s.spread / cur.pip * getOnePipValueGbp(cur)
+            var spread = s.spread / cur.pip * com.getOnePipValueGbp(cur)
             var timeArr = s.time.split(":")
             var time = timeArr[0] + ":" + timeArr[1]
 
@@ -127,9 +126,9 @@ module.exports = { run: async function (app, dbClient) {
         head = head + "<table>"
         head = head + "<tr><th>One PIP in GBP</th><td>" + cur.pipToGBP.toFixed(2) + "£</td></tr>"
         head = head + "<tr><th>Leverage </th><td>" + cur.leverage + "</td></tr>"
-        // head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
-        // head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
-        // head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
+        head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
         head = head + "</table>"
 
         body.reverse()
@@ -168,21 +167,22 @@ module.exports = { run: async function (app, dbClient) {
         output += "<a target='_blank' href='http://" + req.headers.host + "/schedules'>SCHEDULES</a><br>"
         output += "<a target='_blank' href='http://" + req.headers.host + "/exceptions'>ERRORS</a><br>"
         output += "<br>"
-        output += "<p>/:account/:sl/:offset/:tp/:action/:symbol/:volume<br>"
+        output += "<p>/:account/:sl/:offset/:tp/:action/:symbol/:volume/:maxspread?/:cancel?<br>"
         output += "/close/:account/:symbol<br>"
         output += "/lock/:account/<br>"
-        output += "/unlock/:account/<br>"
+        output += "/unlock/:account/</p>"
         output += "<p>curl -X POST http://" + req.headers.host + "/6/0/0/0/sell/GBPUSD/0.1<br>"
+        output += "curl -X POST http://" + req.headers.host + "/6/0/0/0/sell/GBPUSD/0.1/2/true<br>"
         output += "curl -X POST http://" + req.headers.host + "/close/6/GBPUSD<br>"
         output += "curl -X POST http://" + req.headers.host + "/lock/6<br>"
-        output += "curl -X POST http://" + req.headers.host + "/unlock/6<br>"
+        output += "curl -X POST http://" + req.headers.host + "/unlock/6</p>"
         res.render("web", { output });
     });
 
     async function renderTrades(data) {
         var output = "<table>"
         output += "<tr> <th></th> <th></th> <th>Acc</th> <th>Action</th> <th>Symbol</th> <th>SL</th>" +
-        "<th>Offset</th> <th>TP</th> <th>Volume</th>  <th>Max Spread</th> </tr>"
+        "<th>Offset</th> <th>TP</th> <th>Volume</th>  <th>Spread</th>  <th>Max</th> </tr>"
 
         var color = ""
         await data.forEach( d => {
@@ -196,6 +196,11 @@ module.exports = { run: async function (app, dbClient) {
                 case "discharged": 
                     color = "grey"
                 break
+                case "stopped": 
+                    color = "brown"
+                break
+                default:
+                    color = "black"
             }
 
             output += "<tr>" +
@@ -208,7 +213,8 @@ module.exports = { run: async function (app, dbClient) {
             "<td>&nbsp" + d.offset + "</td>" +
             "<td>&nbsp" + d.tp + "</td>" +
             "<td>&nbsp" + d.volume + "</td>" +
-            "<td>&nbsp" + d.maxSpread + "</td>" +
+            "<td>&nbsp" + parseFloat(d.spread).toFixed(2) + "£</td>" +
+            "<td>&nbsp" + parseFloat(d.maxSpread).toFixed(2) + "£</td>" +
             "</tr>"
         })
         return output += "</table>"

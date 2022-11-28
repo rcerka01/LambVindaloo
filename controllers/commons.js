@@ -24,8 +24,23 @@ function tradeDirectionToDigit(direction) {
     }
 }
 
+function getOnePipValueGbp(currency) {
+    return currency.lot * currency.value * currency.pip * currency.pipToGBP
+}
+
+function pipToGbp(symbol, pipValue) {
+    const cur = conf.currencies.find( currency => currency.name == symbol )
+    var gbp = pipValue / cur.pip * getOnePipValueGbp(cur)
+    return gbp
+}
+
+function getConfigBySymbol(symbol) { return conf.currencies.find(c => c.name == symbol) }
+
 module.exports = {
     log,
     connect,
-    tradeDirectionToDigit
+    tradeDirectionToDigit,
+    getOnePipValueGbp,
+    pipToGbp,
+    getConfigBySymbol
 }
