@@ -54,7 +54,7 @@ module.exports = { trade: function (dbClient, account, sl, tp, offset, action, s
                     // xtb given spread
                     const spreadInPips = response.returnData.spreadRaw / curConf.pip
                     const spreadInGbp = com.pipToGbp(symbol, spreadInPips) * curConf.pip
-                    dispatchModel.addSpread(dbClient, id, spreadInGbp, maxSpreadGbp, isDispatchCancel)
+                    dispatchModel.addSpread(dbClient, id, spreadInGbp, maxSpreadGbp)
                         com.log("Spread in pips: " + spreadInPips + " spread in GBP: " + spreadInGbp, localLog);
 
                     // improve tp by taking off spread
@@ -71,6 +71,8 @@ module.exports = { trade: function (dbClient, account, sl, tp, offset, action, s
                         } else {
                             // cancel or retry trade
                             if (isDispatchCancel) {
+                                // shange state to stopped
+                                dispatchModel.stop(dbClient, id)
                                 // confirm close
                                 await dispatchModel.dischargePreceding(dbClient, account, symbol)
                                 await dispatchModel.openDispatch(dbClient, account, 'close', symbol, 'pending')

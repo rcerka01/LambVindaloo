@@ -128,9 +128,18 @@ async function deleteByAccount(client, account) {
     }
 }
 
-async function addSpread(client, id, spread, maxSpread, cancel) {
-    if (cancel) var update = {$set: { spread: spread, maxSpread: maxSpread, status: "stopped" }}
-    else var update = {$set: { spread: spread, maxSpread: maxSpread }}
+async function addSpread(client, id, spread, maxSpread) {
+    var update = {$set: { spread: spread, maxSpread: maxSpread }}
+    try {
+        const result = await updateOneDB(client, id, update);
+        return result;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function stop(client, id) {
+    var update = {$set: { status: "stopped" }}
     try {
         const result = await updateOneDB(client, id, update);
         return result;
@@ -147,5 +156,6 @@ module.exports = {
     getDispatchesByAccount,
     verify,
     deleteByAccount,
-    addSpread
+    addSpread,
+    stop
 }
