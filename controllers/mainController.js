@@ -19,7 +19,7 @@ module.exports = { run: async function (app, dbClient) {
     await lockedAccountsController.setLockedAccounts(dbClient);
 
     // start scheduler
-    scheduleController.run(dbClient);
+    // scheduleController.run(dbClient);
 
     function isLockedAccount(account) {
         return lockedAccountsController.isLockedAccount(account);
@@ -52,6 +52,9 @@ module.exports = { run: async function (app, dbClient) {
         var volume = Number(req.params.volume);
         var maxSpread = Number(req.params.maxspread);
         var isDispatchCancel = Boolean(req.params.dispcancel);
+
+        // action dynamic or preset
+        if (action == "dynamic") action = req.body
 
         var accountsArr = accounts.split(',').map(Number)
 
