@@ -129,10 +129,13 @@ module.exports = { run: async function (app, dbClient) {
         head = head + "<table>"
         head = head + "<tr><th>One PIP in GBP</th><td>" + cur.pipToGBP.toFixed(2) + "£</td></tr>"
         head = head + "<tr><th>Leverage </th><td>" + cur.leverage + "</td></tr>"
-        head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
-        head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
-        head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
-        head = head + "</table>"
+
+        if (spreadsArr.length != 0) {
+            head = head + "<tr><th>Spread Percentile 80</th><td>" + percentile(80, spreadsArr).toFixed(2) + "£</td></tr>"
+            head = head + "<tr><th>Spread Max </th><td>" + spreadsArr.sort((a, b) => b - a)[0].toFixed(2) + "£</td></tr>"
+            head = head + "<tr><th>Spread Min </th><td>" + spreadsArr.sort((a, b) => a - b)[0].toFixed(2) + "£</td></tr>"
+            head = head + "</table>"
+        }
 
         body.reverse()
         const output = head + body.join("")
