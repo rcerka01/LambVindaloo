@@ -1,17 +1,19 @@
-// 27.10.22
 const toGBP = {
-    CHF: 0.87,
+    // 16.02.23
+    CHF: 0.90,
+    EUR: 0.89,
+    USD: 0.84,
+    CAD: 0.62,
+    JPY: 0.0062,
+
+    // 27.10.22
     HUF: 0.0021,
     PLN: 0.18,
-    EUR: 0.86,  // 9.12.2022
     CZK: 0.035,
     MXN: 0.043,
     RON: 0.18,
-    USD: 0.81, // 9.12.2022
     AUD: 0.56,
-    CAD: 0.60, // 9.12.2022
     NZD: 0.5,
-    JPY: 0.0060, // 9.12.2022
     ZAR: 0.048,
     TRY: 0.046,
     BRL: 0.16,
@@ -598,6 +600,28 @@ module.exports = {
             value: 0.1,
             marginToGBP: toGBP.USD,
             pipToGBP: toGBP.ZAR,
+            enabled: false
+        },
+        { 
+            id: 55,
+            name: "NATGAS",
+            lot: 30000,
+            leverage: 10,
+            pip: 1,
+            value: 0.1,
+            marginToGBP: toGBP.USD,
+            pipToGBP: toGBP.USD,
+            enabled: false
+        },
+        { 
+            id: 56,
+            name: "OIL.WTI",
+            lot: 1000,
+            leverage: 10,
+            pip: 1,
+            value: 0.1,
+            marginToGBP: toGBP.USD,
+            pipToGBP: toGBP.USD,
             enabled: false
         },
     ]
