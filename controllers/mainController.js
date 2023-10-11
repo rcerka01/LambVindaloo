@@ -1,5 +1,6 @@
 const singleTradeController = require("./singleTradeController");     
 const closeTradeController = require("./closeTradeController");  
+const tradesController = require("./tradesController");  
 const lockedAccountsController = require("./lockedAccountsController");  
 const scheduleController = require("./scheduleController");  
 const com = require("./commons");  
@@ -323,4 +324,21 @@ module.exports = { run: async function (app, dbClient) {
         res.redirect("/schedules");
     });
 
+    // TRADES
+    // http://localhost:3011/trades/open/3/0/0   ("open" can be replaced with anything)
+    // http://localhost:3011/trades/history/3/1696125586000/0   ("account", "start", "end", last two - unix time stump + 000)
+    app.get("/trades/:tradesType/:account/:start/:end", async function (req, res) {
+        var tradesType = req.params.tradesType;
+        var account = Number(req.params.account);
+        var start = Number(req.params.start);
+        var end = Number(req.params.end);
+
+        await tradesController.getTrades(dbClient, tradesType, account, start, end).then(data => {
+            res.json(data)
+        }).catch(error => {
+            console.error(error);
+            res.json(error)
+        });
+    });
+    
 }}

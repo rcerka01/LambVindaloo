@@ -22,7 +22,6 @@ module.exports = {
             uri: "",
             name: ""
         }
-        
     },
     logs: {
         all: false,
@@ -30,7 +29,8 @@ module.exports = {
         spread: false,
         close: false,
         trade: false,
-        verify: false
+        verify: false,
+        trades: false
     },
     defaultAccount: 1, // when account not passed with url
     login: login.accounts,

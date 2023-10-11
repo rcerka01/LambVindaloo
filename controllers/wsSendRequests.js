@@ -120,10 +120,45 @@ function sendGetPreviousTrades(dbClient, wSocket) {
     }
 }
 
+function getTrades(dbClient, ws) {
+    var msg = {};
+    msg.command = "getTrades";
+    var arguments = {};
+    arguments.openedOnly = true;
+    msg.arguments = arguments;
+    try {
+        var msg = JSON.stringify(msg);
+        ws.send(msg);
+            com.log('Sent ' + msg.length + ' bytes of data: ' + msg, localLog);
+    } catch(Exception) {
+            com.log('Error while sending data: ' + Exception.message, localLog);
+        errorsModel.saveError(dbClient, symbol, 0, 'WS, sgetTrades(), MESSAGE:' + JSON.stringify(msg)  + ' ERROR:' + Exception.message);
+    }
+}
+
+function getTradesHistory(dbClient, start, end, ws) {
+    var msg = {};
+    msg.command = "getTradesHistory";
+    var arguments = {};
+    arguments.end = end;
+    arguments.start = start;
+    msg.arguments = arguments;
+    try {
+        var msg = JSON.stringify(msg);
+        ws.send(msg);
+            com.log('Sent ' + msg.length + ' bytes of data: ' + msg, localLog);
+    } catch(Exception) {
+            com.log('Error while sending data: ' + Exception.message, localLog);
+        errorsModel.saveError(dbClient, symbol, 0, 'WS, sgetTradesHistory(), MESSAGE:' + JSON.stringify(msg)  + ' ERROR:' + Exception.message);
+    }
+}
+
 module.exports = {
     login: function login(dbClient, ws, account) { sendLogin(dbClient, ws, account); },
     getPrice,
     startTrade: function startTrade(dbClient, action, symbol, price, volume, wSocket, sl, tp, offset) { sendStartTrade(dbClient, action, symbol, price, volume, wSocket, sl, tp, offset); },
     closeTrade: function closeTrade(dbClient, position, volume, price, symbol, wSocket) { sendCloseTrade(dbClient, position, volume, price, symbol, wSocket); },
-    getPreviousTrades: function getPreviousTrades(dbClient, wSocket) { sendGetPreviousTrades(dbClient, wSocket); }
+    getPreviousTrades: function getPreviousTrades(dbClient, wSocket) { sendGetPreviousTrades(dbClient, wSocket); },
+    getTrades,
+    getTradesHistory
 }
