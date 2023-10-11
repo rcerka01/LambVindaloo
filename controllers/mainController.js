@@ -327,7 +327,7 @@ module.exports = { run: async function (app, dbClient) {
     // TRADES
     // http://localhost:3011/trades/open/3/0/0   ("open" can be replaced with anything)
     // http://localhost:3011/trades/history/3/1696125586000/0   ("account", "start", "end", last two - unix time stump + 000)
-    app.get("/trades/:tradesType/:account/:start/:end", async function (req, res) {
+    app.get("/trades/:tradesType/:account/:start?/:end?", async function (req, res) {
         var tradesType = req.params.tradesType;
         var account = Number(req.params.account);
         var start = Number(req.params.start);
